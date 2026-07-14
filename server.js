@@ -1,76 +1,108 @@
-res.end(`
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
+const http = require('http');
 
-<style>
-body{
-    background: linear-gradient(135deg,#b7e5ff,#d9c6ff,#ffd6ea);
-    font-family: 'Arial';
-    text-align:center;
-    margin-top:70px;
-}
+const port = process.env.PORT || 3000;
 
-.box{
-    background:white;
-    width:70%;
-    margin:auto;
-    padding:30px;
-    border-radius:25px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.2);
-}
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
 
-h1{
-    color:#7b4dd4;
-}
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
-p{
-    color:#444;
-    font-size:18px;
-}
+  res.end(`
+    <!DOCTYPE html>
+    <html lang="th">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-.name{
-    color:#ff69b4;
-    font-size:28px;
-    font-weight:bold;
-}
+      <title>เว็บไซต์ของแก้ม</title>
 
-.footer{
-    margin-top:20px;
-    color:#666;
-}
-</style>
+      <style>
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-family: Arial, sans-serif;
+          text-align: center;
+          background: linear-gradient(135deg, #bde7ff, #d8c4ff, #ffd6eb);
+        }
 
-</head>
+        .box {
+          width: 70%;
+          max-width: 600px;
+          background-color: white;
+          padding: 35px;
+          border-radius: 30px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+          border: 5px solid #e4d5ff;
+        }
 
-<body>
+        h1 {
+          color: #7754c7;
+          font-size: 32px;
+        }
 
-<div class="box">
+        h2 {
+          color: #ff69a6;
+        }
 
-<h1>🌸 ยินดีต้อนรับ 🌸</h1>
+        p {
+          color: #555555;
+          font-size: 18px;
+          line-height: 1.8;
+        }
 
-<p class="name">🎀 แก้ม (Gam) 🎀</p>
+        .name {
+          background-color: #f1e9ff;
+          padding: 15px;
+          border-radius: 20px;
+          color: #6948b5;
+          font-weight: bold;
+        }
 
-<p>
-💻 Web Server ของฉันทำงานสำเร็จแล้ว
-</p>
+        .cartoon {
+          font-size: 50px;
+        }
 
-<p>
-👩‍🎓 นางสาว ภัควดี กล่ำจีน<br>
-รหัสนักศึกษา 69319011203
-</p>
+        .decoration {
+          margin-top: 20px;
+          font-size: 28px;
+        }
+      </style>
+    </head>
 
-<p class="footer">
-🩵 ขอบคุณที่เข้ามาเยี่ยมชมเว็บไซต์ของฉัน 🩵
-</p>
+    <body>
+      <div class="box">
 
-<div style="font-size:35px;">
-☁️ 🌸 🩵 🐰 🎀 ⭐ 💜 🌷
-</div>
+        <div class="cartoon">🐰🌸🎀</div>
 
-</div>
+        <h1>ยินดีต้อนรับเข้าสู่ Web Server</h1>
 
-</body>
-</html>
-`);
+        <h2>สวัสดีค่ะ ชื่อเล่นแก้ม 💜</h2>
+
+        <p>
+          เว็บไซต์ของฉันทำงานด้วยระบบ Node.js<br>
+          และเผยแพร่ผ่าน Railway
+        </p>
+
+        <div class="name">
+          👩‍💻 จัดทำโดย นางสาว ภัควดี กล่ำจีน<br>
+          รหัสนักศึกษา 69319011203
+        </div>
+
+        <p>ขอบคุณที่เข้ามาเยี่ยมชมเว็บไซต์ของแก้มนะคะ 🥰</p>
+
+        <div class="decoration">
+          ☁️ 🩵 🌷 ⭐ 🐻 🎀 💜 ☁️
+        </div>
+
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+server.listen(port, () => {
+  console.log(`Server is running on port: ${port}`);
+});
