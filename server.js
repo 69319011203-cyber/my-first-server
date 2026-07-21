@@ -1,244 +1,229 @@
 const http = require('http');
+// 1. เรียกใช้งาน Pool จากไลบรารี pg สำหรับจัดการการเชื่อมต่อฐานข้อมูล
+const { Pool } = require('pg');
+
+// 2. ตั้งค่าการเชื่อมต่อ โดยดึง URL มาจาก Environment Variable ของ Railway
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 const port = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   res.statusCode = 200;
-
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
-  res.end(`
-    <!DOCTYPE html>
-    <html lang="th">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  try {
+    // 3. ขอเชื่อมต่อและส่งคำสั่ง SQL ไปดึงข้อมูลจากตาราง students
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM students');
+    client.release(); // คืนการเชื่อมต่อเมื่อใช้งานเสร็จ
 
-      <title>เว็บไซต์ของแก้ม</title>
-
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        body {
-          min-height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-family: 'Arial', 'Segoe UI', sans-serif;
-          text-align: center;
-          background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-          background-size: 400% 400%;
-          animation: gradientShift 15s ease infinite;
-          position: relative;
-          overflow: hidden;
-        }
-
-        @keyframes gradientShift {
-          0% {
-            background-position: 0% 50%;
+    // 4. นำข้อมูลที่ได้ (result.rows) มาประกอบเป็นตาราง HTML พร้อมดีไซน์
+    let html = `
+      <!DOCTYPE html>
+      <html lang="th">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ระบบฐานข้อมูลนักศึกษา</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
           }
-          50% {
-            background-position: 100% 50%;
+
+          body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', 'Segoe UI', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            padding: 20px;
           }
-          100% {
-            background-position: 0% 50%;
+
+          @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
           }
-        }
 
-        /* ล้นลงมา */
-        .floating-emoji {
-          position: fixed;
-          font-size: 40px;
-          opacity: 0.7;
-          animation: float-down linear infinite;
-          pointer-events: none;
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        @keyframes float-down {
-          to {
-            transform: translateY(100vh) rotate(360deg);
-            opacity: 0;
+          .container {
+            width: 90%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 35px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
           }
-        }
 
-        .emoji-1 { left: 10%; animation-duration: 8s; animation-delay: 0s; }
-        .emoji-2 { left: 20%; animation-duration: 10s; animation-delay: 1s; }
-        .emoji-3 { left: 30%; animation-duration: 12s; animation-delay: 2s; }
-        .emoji-4 { left: 40%; animation-duration: 9s; animation-delay: 3s; }
-        .emoji-5 { left: 50%; animation-duration: 11s; animation-delay: 1.5s; }
-        .emoji-6 { left: 60%; animation-duration: 10s; animation-delay: 2.5s; }
-        .emoji-7 { left: 70%; animation-duration: 12s; animation-delay: 0.5s; }
-        .emoji-8 { left: 80%; animation-duration: 9s; animation-delay: 3.5s; }
-        .emoji-9 { left: 90%; animation-duration: 11s; animation-delay: 1s; }
-
-        .box {
-          width: 90%;
-          max-width: 650px;
-          background: rgba(255, 255, 255, 0.95);
-          padding: 45px;
-          border-radius: 35px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          border: 8px solid rgba(255, 105, 180, 0.3);
-          backdrop-filter: blur(10px);
-          position: relative;
-          z-index: 10;
-          animation: boxFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes boxFloat {
-          0%, 100% {
-            transform: translateY(0px);
+          h1 {
+            color: #e73c7e;
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-align: center;
           }
-          50% {
-            transform: translateY(-10px);
+
+          .subtitle {
+            color: #23a6d5;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 30px;
           }
-        }
 
-        h1 {
-          color: #e73c7e;
-          font-size: 42px;
-          margin-bottom: 10px;
-          text-shadow: 2px 2px 4px rgba(231, 60, 126, 0.2);
-          animation: titleGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes titleGlow {
-          0%, 100% {
-            text-shadow: 2px 2px 4px rgba(231, 60, 126, 0.2);
+          .info-box {
+            background: linear-gradient(135deg, #f1e9ff, #ffe6f0);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border-left: 5px solid #e73c7e;
           }
-          50% {
-            text-shadow: 0 0 20px rgba(231, 60, 126, 0.5);
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
           }
-        }
 
-        h2 {
-          color: #23a6d5;
-          font-size: 28px;
-          margin-bottom: 20px;
-        }
-
-        p {
-          color: #555555;
-          font-size: 18px;
-          line-height: 1.8;
-          margin-bottom: 15px;
-        }
-
-        .name {
-          background: linear-gradient(135deg, #f1e9ff, #ffe6f0);
-          padding: 20px;
-          border-radius: 25px;
-          color: #6948b5;
-          font-weight: bold;
-          font-size: 16px;
-          border-left: 5px solid #e73c7e;
-          margin: 20px 0;
-        }
-
-        .cartoon {
-          font-size: 60px;
-          margin-bottom: 10px;
-          animation: bounce 2s ease-in-out infinite;
-        }
-
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
+          th {
+            background: linear-gradient(135deg, #e73c7e, #23a6d5);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-size: 16px;
           }
-          50% {
-            transform: translateY(-20px);
+
+          td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            color: #333;
           }
-        }
 
-        .decoration {
-          margin-top: 25px;
-          font-size: 32px;
-          letter-spacing: 10px;
-          animation: decorationFloat 4s ease-in-out infinite;
-        }
-
-        @keyframes decorationFloat {
-          0%, 100% {
-            transform: translateX(0);
-            opacity: 0.8;
+          tr:hover {
+            background-color: #f9f9f9;
           }
-          50% {
-            transform: translateX(10px);
-            opacity: 1;
+
+          .row-count {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            color: #23a6d5;
+            font-weight: bold;
+            margin-top: 20px;
           }
-        }
 
-        .stars {
-          position: fixed;
-          width: 2px;
-          height: 2px;
-          background: white;
-          border-radius: 50%;
-          animation: twinkle 3s infinite;
-          pointer-events: none;
-        }
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="cartoon" style="text-align: center; font-size: 50px; margin-bottom: 20px;">
+            🐰🌸🎀
+          </div>
 
-        @keyframes twinkle {
-          0%, 100% { opacity: 0; }
-          50% { opacity: 1; }
-        }
-      </style>
-    </head>
+          <h1>📚 ระบบฐานข้อมูลนักศึกษา</h1>
+          <p class="subtitle">ข้อมูลจากฐานข้อมูล PostgreSQL</p>
 
-    <body>
-      <!-- ดาวเล็กๆกระพริบบน -->
-      <div class="stars" style="top: 10%; left: 15%; animation-delay: 0s;"></div>
-      <div class="stars" style="top: 20%; left: 80%; animation-delay: 1s;"></div>
-      <div class="stars" style="top: 30%; left: 25%; animation-delay: 2s;"></div>
-      <div class="stars" style="top: 40%; left: 85%; animation-delay: 1.5s;"></div>
-      <div class="stars" style="top: 50%; left: 10%; animation-delay: 2.5s;"></div>
+          <div class="info-box">
+            👩‍💻 จัดทำโดย นางสาว ภัควดี กล่ำจีน<br>
+            รหัสนักศึกษา 69319011203<br>
+            <strong style="color: #e73c7e;">✓ เชื่อมต่อฐานข้อมูลสำเร็จ</strong>
+          </div>
+    `;
 
-      <!-- อโมจิลอยลงมา -->
-      <div class="floating-emoji emoji-1">🐰</div>
-      <div class="floating-emoji emoji-2">🌸</div>
-      <div class="floating-emoji emoji-3">🎀</div>
-      <div class="floating-emoji emoji-4">💜</div>
-      <div class="floating-emoji emoji-5">⭐</div>
-      <div class="floating-emoji emoji-6">🩵</div>
-      <div class="floating-emoji emoji-7">🌷</div>
-      <div class="floating-emoji emoji-8">🐻</div>
-      <div class="floating-emoji emoji-9">☁️</div>
+    // วนลูปนำข้อมูลแต่ละแถวมาแสดง
+    if (result.rows.length > 0) {
+      html += `<table>`;
+      html += `<tr><th>🆔 รหัสนักศึกษา</th><th>👤 ชื่อ-นามสกุล</th></tr>`;
+      
+      result.rows.forEach((row, index) => {
+        html += `<tr>
+          <td>${row.student_id}</td>
+          <td>${row.student_name}</td>
+        </tr>`;
+      });
+      
+      html += `</table>`;
+      html += `<div class="row-count">📊 จำนวนนักศึกษาทั้งหมด: ${result.rows.length} คน</div>`;
+    } else {
+      html += `<p style="text-align: center; color: #ff6b6b; font-size: 18px;">⚠️ ไม่พบข้อมูลในตาราง</p>`;
+    }
 
-      <div class="box">
-
-        <div class="cartoon">🐰🌸🎀</div>
-
-        <h1>ยินดีต้อนรับเข้าสู่ Web Server</h1>
-
-        <h2>สวัสดีค่ะ ชื่อเล่นแก้ม 💜</h2>
-
-        <p>
-          เว็บไซต์ของฉันทำงานด้วยระบบ Node.js<br>
-          และเผยแพร่ผ่าน Railway
-        </p>
-
-        <div class="name">
-          👩‍💻 จัดทำโดย นางสาว ภัควดี กล่ำจีน<br>
-          รหัสนักศึกษา 69319011203
+    html += `
+          <div class="footer">
+            ✨ ขอบคุณที่เข้ามาเยี่ยมชมเว็บไซต์ของแก้มนะคะ 🥰<br>
+            <small>Powered by Node.js + PostgreSQL + Railway</small>
+          </div>
         </div>
+      </body>
+      </html>
+    `;
 
-        <p>ขอบคุณที่เข้ามาเยี่ยมชมเว็บไซต์ของแก้มนะคะ 🥰</p>
+    res.end(html);
 
-        <div class="decoration">
-          ☁️ 🩵 🌷 ⭐ 🐻 🎀 💜 ☁️
+  } catch (err) {
+    // กรณีเชื่อมต่อไม่ได้หรือเขียนชื่อตารางผิด
+    console.error('Database Error:', err);
+    
+    res.end(`
+      <!DOCTYPE html>
+      <html lang="th">
+      <head>
+        <meta charset="UTF-8">
+        <title>ข้อผิดพลาด</title>
+        <style>
+          body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ff6b6b, #ee5a6f);
+            font-family: Arial, sans-serif;
+            color: white;
+          }
+          .error-box {
+            background: rgba(0,0,0,0.3);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+          }
+          h1 { font-size: 32px; margin-bottom: 20px; }
+          p { font-size: 16px; line-height: 1.6; margin-bottom: 10px; }
+          code { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; display: block; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="error-box">
+          <h1>❌ เกิดข้อผิดพลาด!</h1>
+          <p>ไม่สามารถเชื่อมต่อฐานข้อมูลได้</p>
+          <code>${err.message}</code>
+          <p style="margin-top: 20px; font-size: 14px;">
+            ⚠️ โปรดตรวจสอบ:<br>
+            • DATABASE_URL ในการตั้งค่า Railway<br>
+            • ตารางชื่อ students มีอยู่จริง<br>
+            • ฐานข้อมูล PostgreSQL ทำงานปกติ
+          </p>
         </div>
-
-      </div>
-    </body>
-    </html>
-  `);
+      </body>
+      </html>
+    `);
+  }
 });
 
 server.listen(port, () => {
-  console.log(`Server is running on port: ${port}`);
+  console.log(`🚀 Server is running on port: ${port}`);
+  console.log(`📊 Database URL: ${process.env.DATABASE_URL ? '✓ Connected' : '✗ Not set'}`);
 });
